@@ -1,0 +1,126 @@
+import java.awt.Component;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
+
+import javax.swing.BorderFactory;
+import javax.swing.Box;
+import javax.swing.ButtonGroup;
+import javax.swing.JFrame;
+import javax.swing.JRadioButton;
+
+public class MainFrame extends JFrame {
+
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+	private DrawingPanel dPanel;
+	private Box shapeBox;
+	private JRadioButton lineRadioBtn;
+	private JRadioButton circleRadioBtn;
+	private Box thicknessBox;
+	private JRadioButton rBtn1;
+	private JRadioButton rBtn2;
+	private JRadioButton rBtn3;
+	private JRadioButton rBtn4;
+	ButtonGroup thicknessGroup;
+
+	GridBagConstraints constraints = new GridBagConstraints();
+
+	void addGB(Component component, int x, int y) {
+		constraints.gridx = x;
+		constraints.gridy = y;
+		add(component, constraints);
+	}
+
+	private void init() {
+		setLayout(new GridBagLayout());
+		dPanel = new DrawingPanel();
+		constraints.insets = new Insets(10, 10, 10, 10);
+		constraints.gridwidth = 2;
+		
+		addGB(dPanel, 0, 0);
+		constraints.gridwidth = 1;
+		
+		lineRadioBtn = new JRadioButton("Line");
+		lineRadioBtn.setSelected(true);
+		circleRadioBtn = new JRadioButton("Circle");
+
+		shapeBox = Box.createVerticalBox();
+		ButtonGroup shapeGroup = new ButtonGroup();
+		shapeGroup.add(lineRadioBtn);
+		shapeGroup.add(circleRadioBtn);
+		shapeBox.add(lineRadioBtn);
+		shapeBox.add(circleRadioBtn);
+		shapeBox.setBorder(BorderFactory.createTitledBorder("Shape"));
+		addGB(shapeBox, 0, 1);
+
+		rBtn1 = new JRadioButton("1 pt");
+		rBtn1.setSelected(true);
+		rBtn1.setMnemonic(KeyEvent.VK_D);
+		rBtn1.setActionCommand("disable");
+		rBtn2 = new JRadioButton("3 pt");
+		rBtn2.setMnemonic(KeyEvent.VK_D);
+		rBtn2.setActionCommand("disable");
+		
+		rBtn3 = new JRadioButton("5 pt");
+		rBtn3.setMnemonic(KeyEvent.VK_D);
+		rBtn3.setActionCommand("disable");
+		
+		rBtn4 = new JRadioButton("7 pt");
+		rBtn4.setMnemonic(KeyEvent.VK_D);
+		rBtn4.setActionCommand("disable");
+
+		thicknessBox = Box.createVerticalBox();
+		thicknessGroup = new ButtonGroup();
+		thicknessGroup.add(rBtn1);
+		thicknessGroup.add(rBtn2);
+		thicknessGroup.add(rBtn3);
+		thicknessGroup.add(rBtn4);
+		thicknessBox.add(rBtn1);
+		thicknessBox.add(rBtn2);
+		thicknessBox.add(rBtn3);
+		thicknessBox.add(rBtn4);
+		thicknessBox.setBorder(BorderFactory.createTitledBorder("Thickness"));
+		
+		addGB(thicknessBox, 1, 1);
+		lineRadioBtn.addActionListener((ActionListener) this);
+		circleRadioBtn.addActionListener((ActionListener) this);
+		rBtn1.addActionListener((ActionListener) this);
+		rBtn2.addActionListener((ActionListener) this);
+		rBtn3.addActionListener((ActionListener) this);
+		rBtn4.addActionListener((ActionListener) this);
+	
+	
+	}
+	
+	public void actionPerformed(ActionEvent e) {
+		if (lineRadioBtn.isSelected()){
+			dPanel.setShapeType(0);
+		}
+		else if (circleRadioBtn.isSelected()){
+			dPanel.setShapeType(1);
+			System.out.println("11111111111111");
+		}
+	}
+	public MainFrame() {
+
+		super("Image Filtering");
+		setSize(800, 600);
+
+		init();
+		
+		
+		
+		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		setVisible(true);
+
+	}
+	
+	
+
+}

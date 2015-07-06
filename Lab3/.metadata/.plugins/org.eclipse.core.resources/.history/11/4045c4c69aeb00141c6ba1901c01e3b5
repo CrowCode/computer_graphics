@@ -1,0 +1,68 @@
+import java.awt.Component;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+
+import javax.swing.BorderFactory;
+import javax.swing.Box;
+import javax.swing.ButtonGroup;
+import javax.swing.JFrame;
+import javax.swing.JRadioButton;
+
+
+public class MainFrame extends JFrame {
+
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+	private DrawingPanel dPanel;
+	private Box shapeBox;
+	private JRadioButton lineRadioBtn;
+	private JRadioButton circleRadioBtn;
+	GridBagConstraints constraints = new GridBagConstraints();
+	
+
+	void addGB(Component component, int x, int y) {
+		constraints.gridx = x;
+		constraints.gridy = y;
+		add(component, constraints);
+	}
+
+	private void init() {
+		setLayout(new GridBagLayout());
+		dPanel = new DrawingPanel();
+		constraints.fill= GridBagConstraints.BOTH;
+		addGB(dPanel, 0, 0);
+		
+		shapeBox = Box.createHorizontalBox();
+		ButtonGroup shapeGroup = new ButtonGroup();
+		shapeGroup.add(lineRadioBtn);
+		shapeGroup.add(circleRadioBtn);
+		shapeBox.add(lineRadioBtn);
+		shapeBox.add(circleRadioBtn);
+		shapeBox
+				.setBorder(BorderFactory.createTitledBorder("Rule Output"));
+		addGB(shapeBox, 0, 1);
+		
+		
+	}
+	
+	public MainFrame(){
+		
+
+		super("Image Filtering");
+		setSize(800, 600);
+		
+		init();
+		
+		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		setVisible(true);
+
+
+		
+		
+	}
+	
+	
+
+}

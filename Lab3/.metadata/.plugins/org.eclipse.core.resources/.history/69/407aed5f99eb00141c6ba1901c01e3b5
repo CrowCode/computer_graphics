@@ -1,0 +1,49 @@
+import java.awt.Component;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+
+import javax.swing.JFrame;
+
+
+public class MainFrame extends JFrame {
+
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+	DrawingPanel dPanel;
+	
+	GridBagConstraints constraints = new GridBagConstraints();
+	
+
+	void addGB(Component component, int x, int y) {
+		constraints.gridx = x;
+		constraints.gridy = y;
+		add(component, constraints);
+	}
+
+	private void init() {
+		setLayout(new GridBagLayout());
+		dPanel = new DrawingPanel();
+		
+	}
+	
+	public MainFrame(){
+		
+
+		super("Image Filtering");
+		setSize(800, 600);
+		
+		init();
+		
+		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		setVisible(true);
+
+
+		
+		
+	}
+	
+	
+
+}

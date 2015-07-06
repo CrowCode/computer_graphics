@@ -1,0 +1,308 @@
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.Point;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.geom.Ellipse2D;
+import java.awt.geom.Rectangle2D;
+import java.awt.image.BufferedImage;
+
+import javax.swing.JPanel;
+
+public class DrawingPanel extends JPanel {
+
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+
+	private Point BeginL;
+	private Point EndL;
+	private int[][] PixelArr;
+	private int[][] tmpPixelArr;
+	private BufferedImage BufImg;
+	private int panelW = 700;
+	private int panelH = 400;
+	private int shapeType;
+	private int thickness;
+	Graphics2D g2;
+
+	public DrawingPanel() {
+
+		setDoubleBuffered(true);
+		BeginL = null;
+		EndL = null;
+		setBackground(Color.WHITE);
+		setPreferredSize(new Dimension(panelW, panelH));
+		PixelArr = new int[700][400];
+		tmpPixelArr = new int[700][400];
+		for (int i = 0; i < panelW; i++) {
+			for (int j = 0; j < panelH; j++) {
+				PixelArr[i][j] = 255;
+				tmpPixelArr[i][j] = PixelArr[i][j];
+			}
+		}
+
+		addMouseListener(new MouseAdapter() {
+
+			public void mousePressed(MouseEvent e) {
+
+				if (BeginL != null) {
+					EndL = e.getPoint();
+					g2.setColor(Color.RED);
+					g2.fill(new Ellipse2D.Double(EndL.x, EndL.y,10,10)) ;
+					repaint();
+				} else {
+					BeginL = e.getPoint();
+					g2.setColor(Color.RED);
+					g2.fill(new Ellipse2D.Double(BeginL.x, BeginL.y,10,10)) ;
+					repaint();
+					
+				}
+			}
+
+			public void mouseReleased(MouseEvent e) {
+
+				for (int i = 0; i < panelW; i++) {
+					for (int j = 0; j < panelH; j++) {
+						tmpPixelArr[i][j] = PixelArr[i][j];
+					}
+				}
+
+			}
+		});
+	}
+
+	public void paintComponent(Graphics g) {
+		super.paintComponent(g);
+		g2 = (Graphics2D) g;
+		
+		if (BeginL != null ) {
+			for (int i = 0; i < panelW; i++) {
+				for (int j = 0; j < panelH; j++) {
+					PixelArr[i][j] = tmpPixelArr[i][j];
+				}
+			}
+
+			//System.out.println("type ==>"+shapeType +" with thickness"+thickness);
+			Draw(shapeType, thickness);
+
+			BufImg = convertToBufferedImage(PixelArr);
+			g2.drawImage(BufImg, 0, 0, null);
+			BeginL = null;
+			EndL = null;
+		}
+	}
+
+	BufferedImage convertToBufferedImage(int[][] array) {
+
+		final BufferedImage outputImage = new BufferedImage(panelW, panelH,
+				BufferedImage.TYPE_INT_RGB);
+		Graphics2D g = (Graphics2D) outputImage.getGraphics();
+
+		for (int i = 0; i < panelW; i++) {
+			for (int j = 0; j < panelH; j++) {
+				int a = array[i][j];
+				g.setColor(new Color(a, a, a));
+				g.fillRect(i, j, 1, 1);
+			}
+		}
+		return outputImage;
+	}
+
+	public void update(Graphics g) {
+
+		paintComponent(g);
+	}
+	
+	public void Draw(int type, int thickness){
+		
+		switch (type) {
+		case 0: drawLine(BeginL, EndL, thickness);break;
+		case 1: drawCircle(BeginL, EndL);
+		}
+		
+		
+	}
+	
+public void drawLine(Point A, Point B, int thickness) {
+		
+		int w = B.x - A.x;
+		int h = B.y - A.y;
+		int dx1 = 0, dy1 = 0, dx2 = 0, dy2 = 0;
+		if (w < 0)
+			dx1 = -1;
+		else if (w > 0)
+			dx1 = 1;
+		if (h < 0)
+			dy1 = -1;
+		else if (h > 0)
+			dy1 = 1;
+		if (w < 0)
+			dx2 = -1;
+		else if (w > 0)
+			dx2 = 1;
+		int longest = Math.abs(w);
+		int shortest = Math.abs(h);
+		if (!(longest > shortest)) {
+			longest = Math.abs(h);
+			shortest = Math.abs(w);
+			if (h < 0)
+				dy2 = -1;
+			else if (h > 0)
+				dy2 = 1;
+			dx2 = 0;
+		}
+		int numerator = longest >> 1;
+		for (int i = 0; i <= longest; i++) {
+			switch (thickness){
+			case 1:pen1pt(A);break;
+			case 2:pen3pt(A);break;
+			case 3:pen5pt(A);break;
+			case 4:pen7pt(A);break;
+			}
+			
+			
+			numerator += shortest;
+			if (!(numerator < longest)) {
+				numerator -= longest;
+				A.x += dx1;
+				A.y += dy1;
+			} else {
+				A.x += dx2;
+				A.y += dy2;
+			}
+		}
+
+	}
+
+	public void drawCircle(Point center, Point e) {
+			
+			double dist = (e.x-center.x)*(e.x-center.x) + (e.y-center.y)*(e.y-center.y);
+			int radius = (int) Math.floor(Math.sqrt(dist));
+			int d = (5 - radius * 4)/4;
+			int x = 0;
+			int y = radius;
+	 
+			do {
+				PixelArr[center.x + x][center.y + y]=33;
+				PixelArr[center.x + x][center.y - y]=33;
+				PixelArr[center.x - x][center.y + y]=33;
+				PixelArr[center.x - x][center.y - y]=33;
+				PixelArr[center.x + y][center.y + x]=33;
+				PixelArr[center.x + y][center.y - x]=33;
+				PixelArr[center.x - y][center.y + x]=33;
+				PixelArr[center.x - y][center.y - x]=33;
+				if (d < 0) {
+					d += 2 * x + 1;
+				} else {
+					d += 2 * (x - y) + 1;
+					y--;
+				}
+				x++;
+			} while (x <= y);
+	 
+		
+	}
+	private void pen1pt(Point S){
+		
+		PixelArr[S.x][S.y] = 33;
+		
+	}
+	private void pen3pt(Point S){
+		
+		PixelArr[S.x+1][S.y] = 33;
+		PixelArr[S.x][S.y+1] = 33;
+		PixelArr[S.x][S.y] = 33;
+		PixelArr[S.x][S.y-1] = 33;
+		PixelArr[S.x-1][S.y] = 33;
+		
+	}
+	
+private void pen5pt(Point S){
+		
+		PixelArr[S.x][S.y-2] = 33;
+		PixelArr[S.x+1][S.y-2] = 33;
+		PixelArr[S.x-1][S.y-2] = 33;
+		
+		PixelArr[S.x][S.y-1] = 33;
+		PixelArr[S.x+1][S.y-1] = 33;
+		PixelArr[S.x+2][S.y-1] = 33;
+		PixelArr[S.x-1][S.y-1] = 33;
+		PixelArr[S.x-2][S.y-1] = 33;
+		
+		PixelArr[S.x][S.y] = 33;
+		PixelArr[S.x+1][S.y] = 33;
+		PixelArr[S.x+2][S.y] = 33;
+		PixelArr[S.x-1][S.y] = 33;
+		PixelArr[S.x-2][S.y] = 33;
+		
+		PixelArr[S.x][S.y+1] = 33;
+		PixelArr[S.x+1][S.y+1] = 33;
+		PixelArr[S.x+2][S.y+1] = 33;
+		PixelArr[S.x-1][S.y+1] = 33;
+		PixelArr[S.x-2][S.y+1] = 33;
+		
+		PixelArr[S.x][S.y+2] = 33;
+		PixelArr[S.x+1][S.y+2] = 33;
+		PixelArr[S.x-1][S.y+2] = 33;
+		
+		
+	}
+
+private void pen7pt(Point S){
+	
+	PixelArr[S.x][S.y-3] = 33;
+	PixelArr[S.x+1][S.y-3] = 33;
+	PixelArr[S.x-1][S.y-3] = 33;
+	
+	PixelArr[S.x][S.y-2] = 33;
+	PixelArr[S.x+1][S.y-2] = 33;
+	PixelArr[S.x+2][S.y-2] = 33;
+	PixelArr[S.x-1][S.y-2] = 33;
+	PixelArr[S.x-2][S.y-2] = 33;
+	
+	PixelArr[S.x][S.y-1] = 33;
+	PixelArr[S.x+1][S.y-1] = 33;
+	PixelArr[S.x+2][S.y-1] = 33;
+	PixelArr[S.x+3][S.y-1] = 33;
+	PixelArr[S.x-1][S.y-1] = 33;
+	PixelArr[S.x-2][S.y-1] = 33;
+	PixelArr[S.x-3][S.y-1] = 33;
+	
+	PixelArr[S.x][S.y] = 33;
+	PixelArr[S.x+1][S.y] = 33;
+	PixelArr[S.x+2][S.y] = 33;
+	PixelArr[S.x+3][S.y] = 33;
+	PixelArr[S.x-1][S.y] = 33;
+	PixelArr[S.x-2][S.y] = 33;
+	PixelArr[S.x-3][S.y] = 33;
+	
+	PixelArr[S.x][S.y+1] = 33;
+	PixelArr[S.x+1][S.y+1] = 33;
+	PixelArr[S.x+2][S.y+1] = 33;
+	PixelArr[S.x+3][S.y+1] = 33;
+	PixelArr[S.x-1][S.y+1] = 33;
+	PixelArr[S.x-2][S.y+1] = 33;
+	PixelArr[S.x-3][S.y+1] = 33;
+	
+	PixelArr[S.x][S.y+2] = 33;
+	PixelArr[S.x+1][S.y+2] = 33;
+	PixelArr[S.x+2][S.y+2] = 33;
+	PixelArr[S.x-1][S.y+2] = 33;
+	PixelArr[S.x-2][S.y+2] = 33;
+	
+	PixelArr[S.x][S.y+3] = 33;
+	PixelArr[S.x+1][S.y+3] = 33;
+	PixelArr[S.x-1][S.y+3] = 33;
+}
+	public void setShapeType(int s){
+		this.shapeType = s;
+	}
+	public void setThickness(int s){
+		this.thickness = s;
+	}
+
+}

@@ -1,0 +1,567 @@
+import java.awt.Color;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.List;
+import java.awt.Point;
+import java.awt.Polygon;
+import java.awt.Rectangle;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
+import java.awt.image.BufferedImage;
+
+import javax.swing.JPanel;
+
+
+public class DrawingPanel extends JPanel implements KeyListener {
+	
+	public class table{
+		public double zbuf;
+		public int x;
+		int y;
+		
+		public table(double zbuf, int x, int y){
+			this.zbuf = zbuf;
+			this.x = x;
+			this.y = y;
+		}
+	}
+	
+	int flag = 1;
+	private static final double DEG_TO_RAD = 0.017453292;
+	private double modelScale = 10;
+	private int xScreenCenter = 800/2;
+	private int yScreenCenter = 600/2;
+	private double Z_Buf[][] = new double [800][600];
+	
+	private int[] screenPosition2 = new int []{ 0, 0, 20 };
+	
+	private int[] viewAngle = new int[]{ 45, 90, 90 };
+	
+	double CT = Math.cos( DEG_TO_RAD * viewAngle[0] );
+	double ST = Math.sin( DEG_TO_RAD * viewAngle[0] );
+	double CP = Math.cos( DEG_TO_RAD * viewAngle[1] );
+	double SP = Math.sin( DEG_TO_RAD * viewAngle[1] );
+
+	
+	double Cube1_points[][] = new double [][]{{1, 1, 1, 1}, {1, -1, 1, 1}, {-1, -1, 1, 1}, {-1, 1, 1, 1}, {1, 1, -1, 1}, {1, -1, -1, 1}, {-1,-1, -1, 1}, {-1, 1, -1, 1}};
+	
+	
+	double Cube2_points[][] = new double [][]{{3, 3, 3, 1}, {3, 2, 3, 1}, {2, 2, 3, 1}, {2, 3, 3, 1}, {3, 3, 2, 1}, {3, 2, 2, 1}, {2, 2, 2, 1}, {2, 3, 2, 1}};
+	double d = xScreenCenter * (CT/ST);
+	
+	double Q1[][] = new double[8][4];
+	double Q2[][] = new double[8][4];
+	int z = 9;
+	int Angle = 10;
+	
+	int edges_length[] = new int [12];
+	double z_difference[] = new double [12];
+	double z_edge_step[] = new double [12];
+	
+		
+	BufferedImage image = new BufferedImage(800, 600, BufferedImage.TYPE_INT_RGB);
+	Graphics2D g2;
+	
+	public DrawingPanel(){
+		setFocusable(true);
+		addKeyListener(this);
+		
+
+		for(int i=0; i < 800; i++){
+			for (int j=0; j < 600; j++){
+				Z_Buf[i][j] = -200;
+				
+			}
+		}
+	}
+
+	@Override
+	protected void paintComponent(Graphics g) {
+		
+		g2 = (Graphics2D) image.getGraphics();
+		
+		g2.setColor(Color.BLACK);
+		g2.fill(new Rectangle(0, 0, 800, 600));
+		
+		
+		d = xScreenCenter * (CT/ST);
+		
+
+		for (int i = 0; i < 8; i++)
+		{
+			Q1[i][0] = ( d*( Cube1_points[i][0] / (Cube1_points[i][2] + z) ) ) + xScreenCenter;
+			Q1[i][1] = ( -d*( Cube1_points[i][1] / (Cube1_points[i][2] + z) ) ) + yScreenCenter;
+			Q1[i][2] = 1 / (Cube1_points[i][2] + z);
+			Q1[i][3] = 1;
+		}
+		
+		for (int i = 0; i < 8; i++)
+		{
+			Q2[i][0] = ( d*( Cube2_points[i][0] / (Cube2_points[i][2] + z) ) ) + xScreenCenter;
+			Q2[i][1] = ( -d*( Cube2_points[i][1] / (Cube2_points[i][2] + z) ) ) + yScreenCenter;
+			Q2[i][2] = 1 / (Cube2_points[i][2] + z);
+			Q2[i][3] = 1;
+		}
+		
+		int pixs[][] = new int [800][600];
+			getArray(pixs);
+			
+		
+		
+		/*int xpoints1[] = new int[]{(int)Q1[0][0],(int)Q1[1][0],(int)Q1[2][0],(int)Q1[3][0]};
+		int ypoints1[] = new int[]{(int)Q1[0][1],(int)Q1[1][1],(int)Q1[2][1],(int)Q1[3][1]};
+		
+		int xpoints2[] = new int[]{(int)Q1[4][0],(int)Q1[5][0],(int)Q1[6][0],(int)Q1[7][0]};
+		int ypoints2[] = new int[]{(int)Q1[4][1],(int)Q1[5][1],(int)Q1[6][1],(int)Q1[7][1]};
+		
+		int xpoints3[] = new int[]{(int)Q1[4][0],(int)Q1[0][0],(int)Q1[1][0],(int)Q1[5][0]};
+		int ypoints3[] = new int[]{(int)Q1[4][1],(int)Q1[0][1],(int)Q1[1][1],(int)Q1[5][1]};
+		
+		int xpoints4[] = new int[]{(int)Q1[6][0],(int)Q1[2][0],(int)Q1[3][0],(int)Q1[7][0]};
+		int ypoints4[] = new int[]{(int)Q1[6][1],(int)Q1[2][1],(int)Q1[3][1],(int)Q1[7][1]};
+		
+		int xpoints5[] = new int[]{(int)Q1[1][0],(int)Q1[2][0],(int)Q1[6][0],(int)Q1[5][0]};
+		int ypoints5[] = new int[]{(int)Q1[1][1],(int)Q1[2][1],(int)Q1[6][1],(int)Q1[5][1]};
+		
+		int xpoints6[] = new int[]{(int)Q1[0][0],(int)Q1[3][0],(int)Q1[7][0],(int)Q1[4][0]};
+		int ypoints6[] = new int[]{(int)Q1[0][1],(int)Q1[3][1],(int)Q1[7][1],(int)Q1[4][1]};*/
+		
+				
+		table table1[];
+		table table2[];
+		table table3[];
+		table table4[];
+		table table5[];
+		table table6[];
+		table table7[];
+		table table8[];
+		table table9[];
+		table table10[];
+		table table11[];
+		table table12[];
+		
+		for(int i=0; i<800; i++){
+			for(int j=0; j<600; j++){
+				pixs[i][j] = Color.WHITE.getRGB();
+			}
+		}
+		for(int i=0; i < 800; i++){
+			for (int j=0; j < 600; j++){
+				Z_Buf[i][j] = -200;
+				
+			}
+		}
+		
+		table1 = drawLine((int)Q1[0][0], (int)Q1[0][1], Q1[0][2], (int)Q1[1][0], (int)Q1[1][1], Q1[1][2], pixs, 0);
+		
+		table2 = drawLine((int)Q1[1][0], (int)Q1[1][1], Q1[1][2], (int)Q1[2][0], (int)Q1[2][1], Q1[2][2], pixs, 0);
+		
+		//table2 = drawLine((int)Q1[0][0], (int)Q1[0][1], Q1[0][2], (int)Q1[2][0], (int)Q1[2][1], Q1[2][2], pixs, 0);
+		
+		table3 = drawLine((int)Q1[2][0], (int)Q1[2][1], Q1[2][2], (int)Q1[3][0], (int)Q1[3][1], Q1[3][2], pixs, 0);
+		
+		table4 = drawLine((int)Q1[3][0], (int)Q1[3][1], Q1[3][2], (int)Q1[0][0], (int)Q1[0][1], Q1[0][2], pixs, 0);
+		
+				
+		table5 = drawLine((int)Q1[4][0], (int)Q1[4][1], Q1[4][2], (int)Q1[5][0], (int)Q1[5][1], Q1[5][2], pixs, 0);
+		
+		table6 = drawLine((int)Q1[5][0], (int)Q1[5][1], Q1[5][2], (int)Q1[6][0], (int)Q1[6][1], Q1[6][2], pixs, 0);
+		
+		table7 = drawLine((int)Q1[6][0], (int)Q1[6][1], Q1[6][2], (int)Q1[7][0], (int)Q1[7][1], Q1[7][2], pixs, 0);
+		
+		table8 = drawLine((int)Q1[7][0], (int)Q1[7][1], Q1[7][2], (int)Q1[4][0], (int)Q1[4][1], Q1[4][2], pixs, 0);
+		
+				
+		table9 = drawLine((int)Q1[4][0], (int)Q1[4][1], Q1[4][2], (int)Q1[0][0], (int)Q1[0][1], Q1[0][2], pixs, 0);
+		
+		table10 = drawLine((int)Q1[1][0], (int)Q1[1][1], Q1[1][2], (int)Q1[5][0], (int)Q1[5][1], Q1[5][2], pixs, 0);
+//		
+		table11 = drawLine((int)Q1[2][0], (int)Q1[2][1], Q1[2][2], (int)Q1[6][0], (int)Q1[6][1], Q1[6][2], pixs, 0);
+//		
+		table12 = drawLine((int)Q1[3][0], (int)Q1[3][1], Q1[3][2], (int)Q1[7][0], (int)Q1[7][1], Q1[7][2], pixs, 0);
+		
+		
+				
+		for (int i=0; i<Math.min(table1.length, table3.length); i++){//1-3 back face
+			
+			drawLine(table1[i].x, table1[i].y, table1[i].zbuf, table3[Math.min(table1.length, table3.length)-i-1].x, table3[Math.min(table1.length, table3.length)-i-1].y, table3[Math.min(table1.length, table3.length)-i-1].zbuf, pixs, 1);
+		}
+		for (int i=0; i<Math.min(table2.length, table3.length); i++){//1-3
+			
+			//drawLine(table2[i].x, table2[i].y, table2[i].zbuf, table3[Math.min(table2.length, table3.length)-i-1].x, table3[Math.min(table2.length, table3.length)-i-1].y, table2[Math.min(table2.length, table3.length)-i-1].zbuf, pixs, 1);
+		}
+		for (int i=0; i<Math.min(table5.length, table7.length); i++){
+			
+			drawLine(table5[i].x, table5[i].y, table5[i].zbuf, table7[Math.min(table5.length, table7.length)-i-1].x, table7[Math.min(table5.length, table7.length)-i-1].y, table5[Math.min(table5.length, table7.length)-i-1].zbuf, pixs, 2);
+		}
+		for (int i=0; i<Math.min(table1.length, table5.length); i++){
+			
+			drawLine(table1[i].x, table1[i].y, table1[i].zbuf, table5[i].x, table5[i].y, table5[i].zbuf, pixs, 3);
+		}	
+		for (int i=0; i<Math.min(table3.length, table7.length); i++){
+			
+			drawLine(table3[i].x, table3[i].y, table3[i].zbuf, table7[i].x, table7[i].y, table7[i].zbuf, pixs, 4);
+		}
+		for (int i=0; i<Math.min(table10.length, table11.length); i++){
+			
+			drawLine(table10[i].x, table10[i].y, table10[i].zbuf, table11[i].x, table11[i].y, table11[i].zbuf, pixs, 5);
+		}
+		for (int i=0; i<Math.min(table9.length, table12.length); i++){
+			
+			drawLine(table9[i].x, table9[i].y, table9[i].zbuf, table12[Math.min(table9.length, table12.length) - i -1].x, table12[Math.min(table9.length, table12.length) - i -1].y, table12[Math.min(table9.length, table12.length) - i -1].zbuf, pixs, 6);
+		}
+		
+		
+		table []table01 = drawLine((int)Q2[0][0], (int)Q2[0][1], Q2[0][2], (int)Q2[1][0], (int)Q2[1][1], Q2[1][2], pixs, 0);
+		
+		table []table02 = drawLine((int)Q2[1][0], (int)Q2[1][1], Q2[1][2], (int)Q2[2][0], (int)Q2[2][1], Q2[2][2], pixs, 0);
+		
+		table []table03 = drawLine((int)Q2[2][0], (int)Q2[2][1], Q2[0][2], (int)Q2[3][0], (int)Q2[3][1], Q2[3][2], pixs, 0);
+		
+		table []table04 = drawLine((int)Q2[3][0], (int)Q2[3][1], Q2[3][2], (int)Q2[0][0], (int)Q2[0][1], Q2[0][2], pixs, 0);
+		
+				
+		table []table05 = drawLine((int)Q2[4][0], (int)Q2[4][1], Q2[4][2], (int)Q2[5][0], (int)Q2[5][1], Q2[5][2], pixs, 0);
+		
+		table []table06 = drawLine((int)Q2[5][0], (int)Q2[5][1], Q2[5][2], (int)Q2[6][0], (int)Q2[6][1], Q2[6][2], pixs, 0);
+		
+		table []table07 = drawLine((int)Q2[6][0], (int)Q2[6][1], Q2[6][2], (int)Q2[7][0], (int)Q2[7][1], Q2[7][2], pixs, 0);
+		
+		table []table08 = drawLine((int)Q2[7][0], (int)Q2[7][1], Q2[7][2], (int)Q2[4][0], (int)Q2[4][1], Q2[4][2], pixs, 0);
+		
+				
+		table []table09 = drawLine((int)Q2[4][0], (int)Q2[4][1], Q2[4][2], (int)Q2[0][0], (int)Q2[0][1], Q2[0][2], pixs, 0);
+		
+		table []table010 = drawLine((int)Q2[1][0], (int)Q2[1][1], Q2[1][2], (int)Q2[5][0], (int)Q2[5][1], Q2[5][2], pixs, 0);
+		
+		table []table011 = drawLine((int)Q2[2][0], (int)Q2[2][1], Q2[2][2], (int)Q2[6][0], (int)Q2[6][1], Q2[6][2], pixs, 0);
+		
+		table []table012 = drawLine((int)Q2[3][0], (int)Q2[3][1], Q2[3][2], (int)Q2[7][0], (int)Q2[7][1], Q2[7][2], pixs, 0);
+		
+		
+		for (int i=0; i<Math.min(table01.length, table04.length); i++){//1-3 back face
+			
+			drawLine(table01[i].x, table01[i].y, table01[i].zbuf, table04[Math.min(table01.length, table04.length)-i-1].x, table04[Math.min(table01.length, table04.length)-i-1].y, table04[Math.min(table01.length, table04.length)-i-1].zbuf, pixs, 1);
+		}
+		for (int i=0; i<Math.min(table02.length, table03.length); i++){//1-3 back face
+			
+			drawLine(table02[i].x, table02[i].y, table02[i].zbuf, table03[Math.min(table02.length, table03.length)-i-1].x, table03[Math.min(table02.length, table03.length)-i-1].y, table03[Math.min(table02.length, table03.length)-i-1].zbuf, pixs, 1);
+		}
+		for (int i=0; i<Math.min(table05.length, table08.length); i++){
+			
+			drawLine(table05[i].x, table05[i].y, table05[i].zbuf, table08[Math.min(table05.length, table08.length)-i-1].x, table08[Math.min(table05.length, table08.length)-i-1].y, table08[Math.min(table05.length, table08.length)-i-1].zbuf, pixs, 2);
+		}
+		for (int i=0; i<Math.min(table06.length, table07.length); i++){
+			
+			drawLine(table06[i].x, table06[i].y, table06[i].zbuf, table07[Math.min(table06.length, table07.length)-i-1].x, table07[Math.min(table06.length, table07.length)-i-1].y, table07[Math.min(table06.length, table07.length)-i-1].zbuf, pixs, 2);
+		}	
+		for (int i=0; i<Math.min(table08.length, table012.length); i++){
+			
+			drawLine(table08[i].x, table08[i].y, table08[i].zbuf, table012[Math.min(table08.length, table012.length)-i-1].x, table012[Math.min(table08.length, table012.length)-i-1].y, table012[Math.min(table08.length, table012.length)-i-1].zbuf, pixs, 4);
+		}
+		for (int i=0; i<Math.min(table04.length, table09.length); i++){
+			
+			drawLine(table04[i].x, table04[i].y, table09[i].zbuf, table09[i].x, table09[i].y, table09[i].zbuf, pixs, 4);
+		}
+		for (int i=0; i<Math.min(table06.length, table011.length); i++){
+			
+			drawLine(table06[i].x, table06[i].y, table06[i].zbuf, table011[i].x, table011[i].y, table011[i].zbuf, pixs, 5);
+		}
+		for (int i=0; i<Math.min(table01.length, table09.length); i++){
+			
+			drawLine(table01[i].x, table01[i].y, table01[i].zbuf, table09[Math.min(table01.length, table09.length)-i-1].x, table09[Math.min(table01.length, table09.length)-i-1].y, table09[Math.min(table01.length, table09.length)-i-1].zbuf, pixs, 6);
+		}
+		
+		
+		for (int i=0; i<Math.min(table9.length, table12.length); i++){
+			
+			//drawLine(table9[i].x, table9[i].y, table9[i].zbuf, table12[Math.min(table9.length, table12.length) - i -1].x, table12[Math.min(table9.length, table12.length) - i -1].y, table12[Math.min(table9.length, table12.length) - i -1].zbuf, pixs, 6);
+		}
+		/*Polygon poly1 = new Polygon(xpoints1, ypoints1, 4);
+		Polygon poly2 = new Polygon(xpoints2, ypoints2, 4);
+		Polygon poly3 = new Polygon(xpoints3, ypoints3, 4);
+		Polygon poly4 = new Polygon(xpoints4, ypoints4, 4);
+		Polygon poly5 = new Polygon(xpoints5, ypoints5, 4);
+		Polygon poly6 = new Polygon(xpoints6, ypoints6, 4);*/
+		
+	
+		setArray(pixs);
+		
+		g.drawImage(image, 0, 0, null);
+	}
+	
+	
+
+	
+
+	public void projectPoint1( int[] input, int[] output )
+	{
+		 double x = screenPosition2[0] + input[0] * CT - input[1] * ST;
+		 double y = screenPosition2[1] + input[0] * ST * SP + input[1] * CT * SP
+		   + input[2] * CP;
+		 double temp = viewAngle[2] / (screenPosition2[2] + input[0] * ST * CP
+		   + input[1] * CT * CP - input[2] * SP );
+	
+		 output[0] = (int)(xScreenCenter + modelScale * temp * x);
+		 output[1] = (int)(yScreenCenter - modelScale * temp * y);
+		 output[2] = 1;
+		 output[3] = input[2];
+		 
+	}
+	
+		
+	public void getArray(int pixels[][]){
+		
+		for(int i=0; i < image.getWidth(); i++){
+			for (int j=0; j < image.getHeight(); j++){
+				pixels[i][j] = image.getRGB(i, j);
+			}
+		}
+		
+	}
+	
+	public void setArray(int pixels[][]){
+		
+		for(int i=0; i < image.getWidth(); i++){
+			for (int j=0; j < image.getHeight(); j++){
+				 image.setRGB(i, j, pixels[i][j]);
+			}
+		}
+		
+	}
+
+	@Override
+	public void keyPressed(KeyEvent event) {
+		
+		if (event.getKeyCode() == KeyEvent.VK_UP) {
+			double x, y;
+			Angle = 10;
+
+			
+			for (int i=0; i<8; i++)
+			{
+				x = Cube1_points[i][1];
+				y = Cube1_points[i][2];
+				Cube1_points[i][1] = (x * Math.cos(Angle * (Math.PI / 180))) - y * Math.sin(Angle * (Math.PI / 180));
+				Cube1_points[i][2] = (x * Math.sin(Angle * (Math.PI / 180))) + y * Math.cos(Angle * (Math.PI / 180));
+			}
+			
+			for (int i=0; i<8; i++)
+			{
+				x = Cube2_points[i][1];
+				y = Cube2_points[i][2];
+				Cube2_points[i][1] = (x * Math.cos(Angle * (Math.PI / 180))) - y * Math.sin(Angle * (Math.PI / 180));
+				Cube2_points[i][2] = (x * Math.sin(Angle * (Math.PI / 180))) + y * Math.cos(Angle * (Math.PI / 180));
+			}
+			flag = 1;
+			repaint();
+			}
+		if (event.getKeyCode() == KeyEvent.VK_DOWN) {
+			
+			double x, y;
+			Angle = -10;
+
+			
+			for ( int i=0; i<8; i++ )
+			{
+				x = Cube1_points[i][1];
+				y = Cube1_points[i][2];
+				Cube1_points[i][1] = (x * Math.cos(Angle * (Math.PI / 180))) - y * Math.sin(Angle * (Math.PI / 180));
+				Cube1_points[i][2] = (x * Math.sin(Angle * (Math.PI / 180))) + y * Math.cos(Angle * (Math.PI / 180));
+			}
+
+			for ( int i=0; i<8; i++ )
+			{
+				x = Cube2_points[i][1];
+				y = Cube2_points[i][2];
+				Cube2_points[i][1] = (x * Math.cos(Angle * (Math.PI / 180))) - y * Math.sin(Angle * (Math.PI / 180));
+				Cube2_points[i][2] = (x * Math.sin(Angle * (Math.PI / 180))) + y * Math.cos(Angle * (Math.PI / 180));
+			}
+			flag = 1;
+			repaint();
+			}
+		if (event.getKeyCode() == KeyEvent.VK_RIGHT) {
+			double x, y;
+			Angle = 10;
+
+			
+			for ( int i=0; i<8; i++ )
+			{
+				x = Cube1_points[i][0];
+				y = Cube1_points[i][2];
+				Cube1_points[i][0] = (x * Math.cos(Angle * (Math.PI / 180))) - y * Math.sin(Angle * (Math.PI / 180));
+				Cube1_points[i][2] = (x * Math.sin(Angle * (Math.PI / 180))) + y * Math.cos(Angle * (Math.PI / 180));
+			}
+			
+			for ( int i=0; i<8; i++ )
+			{
+				x = Cube2_points[i][0];
+				y = Cube2_points[i][2];
+				Cube2_points[i][0] = (x * Math.cos(Angle * (Math.PI / 180))) - y * Math.sin(Angle * (Math.PI / 180));
+				Cube2_points[i][2] = (x * Math.sin(Angle * (Math.PI / 180))) + y * Math.cos(Angle * (Math.PI / 180));
+			}
+			flag = 1;
+			repaint();
+			}
+		if (event.getKeyCode() == KeyEvent.VK_LEFT) {
+			double x, y;
+			Angle = -10;
+
+			
+			for ( int i=0; i<8; i++ )
+			{
+				x = Cube1_points[i][0];
+				y = Cube1_points[i][2];
+				Cube1_points[i][0] = (x * Math.cos(Angle * (Math.PI / 180))) - y * Math.sin(Angle * (Math.PI / 180));
+				Cube1_points[i][2] = (x * Math.sin(Angle * (Math.PI / 180))) + y * Math.cos(Angle * (Math.PI / 180));
+			}
+			
+			for ( int i=0; i<8; i++ )
+			{
+				x = Cube2_points[i][0];
+				y = Cube2_points[i][2];
+				Cube2_points[i][0] = (x * Math.cos(Angle * (Math.PI / 180))) - y * Math.sin(Angle * (Math.PI / 180));
+				Cube2_points[i][2] = (x * Math.sin(Angle * (Math.PI / 180))) + y * Math.cos(Angle * (Math.PI / 180));
+			}
+			flag = 1;
+			repaint();
+			}
+		
+	}
+
+	@Override
+	public void keyReleased(KeyEvent e) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void keyTyped(KeyEvent e) {
+		// TODO Auto-generated method stub
+		
+	}
+	
+public table[] drawLine(int x1, int y1, double z1, int x2, int y2, double z2, int[][] panelArray, int co) {
+		
+	
+	int tmpx = x1;
+	int tmpy = y1;
+		int w = x2 - x1;
+		int h = y2 - y1;
+		int dx1 = 0, dy1 = 0, dx2 = 0, dy2 = 0;
+		if (w < 0)
+			dx1 = -1;
+		else if (w > 0)
+			dx1 = 1;
+		if (h < 0)
+			dy1 = -1;
+		else if (h > 0)
+			dy1 = 1;
+		if (w < 0)
+			dx2 = -1;
+		else if (w > 0)
+			dx2 = 1;
+		int longest = Math.abs(w);
+		int shortest = Math.abs(h);
+		if (!(longest > shortest)) {
+			longest = Math.abs(h);
+			shortest = Math.abs(w);
+			if (h < 0)
+				dy2 = -1;
+			else if (h > 0)
+				dy2 = 1;
+			dx2 = 0;
+		}
+		int numerator = longest >> 1;
+			double z_def = z1 - z2;
+			z_def = - z_def;
+			double z_step = z_def/numerator;
+		table z_buf[] = new table[longest+1];
+			
+		for (int i = 0; i <= longest; i++) {
+			z_buf[i] = new table (10*(z1 + i*z_step), x1, y1);
+			
+			
+			switch (co){
+				case 1:
+					if(Z_Buf[x1][y1] <= 10*(z1 + i*z_step))
+					{
+						panelArray[x1][y1] = Color.RED.getRGB();
+						Z_Buf[x1][y1] = 10*(z1 + i*z_step);
+						
+						
+					}
+					
+					break;
+				case 2:
+					if(Z_Buf[x1][y1] <= 10*(z1 + i*z_step))
+					{
+						panelArray[x1][y1] = Color.BLUE.getRGB();
+						Z_Buf[x1][y1] = 10*(z1 + i*z_step);
+						
+					}
+					
+					break;
+				case 3:
+					if(Z_Buf[x1][y1] <= 10*(z1 + i*z_step))
+					{
+						panelArray[x1][y1] = Color.GREEN.getRGB();
+						Z_Buf[x1][y1] = 10*(z1 + i*z_step);
+						
+					}
+					
+					break;
+				case 4:
+					if(Z_Buf[x1][y1] <= 10*(z1 + i*z_step))
+					{
+						panelArray[x1][y1] = Color.YELLOW.getRGB();
+						Z_Buf[x1][y1] = 10*(z1 + i*z_step);
+					}
+					
+					break;
+				case 5:
+					if(Z_Buf[x1][y1] <= 10*(z1 + i*z_step))
+					{
+							panelArray[x1][y1] = Color.PINK.getRGB();
+							Z_Buf[x1][y1] = 10*(z1 + i*z_step);
+					}
+					
+						break;
+				case 6:
+					if(Z_Buf[x1][y1] <= 10*(z1 + i*z_step))
+					{
+						panelArray[x1][y1] = Color.ORANGE.getRGB();
+						Z_Buf[x1][y1] = 10*(z1 + i*z_step);
+					}
+					
+					break;
+				default:
+					if(Z_Buf[x1][y1] <= 10*(z1 + i*z_step))
+					{
+						panelArray[x1][y1] = Color.BLACK.getRGB();
+						Z_Buf[x1][y1] = 10*(z1 + i*z_step);
+						if(flag == 1){
+							flag =0;
+							//System.out.println("Z=  "+Z_Buf[tmpx][tmpy]);
+						}
+						
+					}
+										
+							
+			}
+			 
+			
+			numerator += shortest;
+			if (!(numerator < longest)) {
+				numerator -= longest;
+				x1 += dx1;
+				y1 += dy1;
+			} else {
+				x1 += dx2;
+				y1 += dy2;
+			}
+		}
+		return z_buf;
+	}
+	
+}

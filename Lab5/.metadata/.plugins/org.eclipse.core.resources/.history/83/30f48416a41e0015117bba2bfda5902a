@@ -1,0 +1,668 @@
+import java.awt.Color;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
+import java.awt.image.BufferedImage;
+import java.util.Timer;
+import java.util.TimerTask;
+
+import javax.swing.JPanel;
+
+
+
+public class My3DWorld extends JPanel{
+
+	Thread runner ;
+	//Timer timer;
+	BufferedImage bi;
+	Graphics2D g2d;
+	int[][] pixels = new int[800][600];
+
+	private double Z_Buf[][] = new double [800][600];
+	private double Z_Buf1[][] = new double [800][600];
+	private double Z_Buf2[][] = new double [800][600];
+	private double Z_Buf3[][] = new double [800][600];
+	private double Z_Buf4[][] = new double [800][600];
+	private double Z_Buf5[][] = new double [800][600];
+	private double Z_Buf6[][] = new double [800][600];
+	private double Z_Buf7[][] = new double [800][600];
+	private double Z_Buf8[][] = new double [800][600];
+	
+	public int lineThickness = 1;
+	public AffinePoint[] pointsTable = new AffinePoint[24];
+	public float[][] projectionMatrix = new float[4][];
+	public float[][] YRotationMatrix = new float[4][];
+	public float[][] XRotationMatrix = new float[4][];
+	public float[][] matrixT = new float[4][];
+	public int Cx = 400;
+	public int Cy = 300;
+	public int d = (int) ((float) 350 * 0.48);
+	public double YDegrees = 0;
+	public double XDegrees = 0;
+	public double CylinderDegreeY = 0;
+	public double degreeStep = 2;
+
+	public My3DWorld() {
+		
+		setFocusable(true);
+		addKeyListener(KL);
+		
+		InitializePointTable();
+		InitializeProjectionMatrix();
+		InitializeYRotationMatrix();
+		InitializeXRotationMatrix();
+		ChangeXRotationMatrix();
+		ChangeYRotationMatrix(0);
+		InitializeTranslationMatrix();
+//		this.run();
+		/* draw the scene here */
+		
+
+		/* start animation here */
+		
+		
+
+	}
+	/*		SAJJAD	*/
+	
+	public void getArray(int pixels[][]){
+	       
+        for(int i=0; i < bi.getWidth(); i++){
+            for (int j=0; j < bi.getHeight(); j++){
+                pixels[i][j] = bi.getRGB(i, j);
+            }
+        }
+       
+    }
+   
+    public void setArray(int pixels[][]){
+       
+        for(int i=0; i < bi.getWidth(); i++){
+            for (int j=0; j < bi.getHeight(); j++){
+            	bi.setRGB(i, j, pixels[i][j]);
+            }
+        }
+       
+    }
+	
+	
+	/*	**********************	*/
+	void MidpointLine(int x1, int y1, int x2, int y2) {
+		boolean thickenX;
+		int longerAxis;
+		int shorterAxis;
+		int dx = x2 - x1;
+		int dy = y2 - y1;
+		int dx1 = 0, dy1 = 0, dx2 = 0, dy2 = 0;
+		if (dx < 0)
+			dx1 = -1;
+		else if (dx > 0)
+			dx1 = 1;
+		if (dy < 0)
+			dy1 = -1;
+		else if (dy > 0)
+			dy1 = 1;
+		if (Math.abs(dx) <= Math.abs(dy)) {
+			thickenX = false;
+			longerAxis = Math.abs(dy);
+			shorterAxis = Math.abs(dx);
+			if (dy < 0)
+				dy2 = -1;
+			else if (dy > 0)
+				dy2 = 1;
+		} else {
+			thickenX = true;
+			longerAxis = Math.abs(dx);
+			shorterAxis = Math.abs(dy);
+			if (dx < 0)
+				dx2 = -1;
+			else if (dx > 0)
+				dx2 = 1;
+		}
+		int numerator = longerAxis;
+
+		// -----line thickness----------------------------------
+		int loopStartValue = lineThickness / 2 * (-1);
+		int loopEndValue;
+		if (lineThickness == 1) {
+			loopEndValue = 1;
+		} else
+			loopEndValue = lineThickness / 2;
+		// -----------------------------------------------------
+		for (int i = 0; i <= longerAxis; i++) {
+			if (thickenX) {
+				for (int j = loopStartValue; j < loopEndValue; j++) {
+//					putPixel(x1, y1 + j);
+					pixels[x1][y1 + j] = 200;
+				}
+			} else {
+				for (int j = loopStartValue; j < loopEndValue; j++) {
+//					putPixel(x1 + j, y1);
+					pixels[x1 + j][y1] = 200;
+				}
+			}
+			numerator += shorterAxis;
+			if (numerator >= longerAxis) {
+				numerator -= longerAxis;
+				x1 += dx1;
+				y1 += dy1;
+			} else {
+				x1 += dx2;
+				y1 += dy2;
+			}
+		}
+	}
+
+	private void putPixel(int x, int y) {
+	}
+
+	private void InitializePointTable() {
+
+		// Central cube
+		pointsTable[0] = new AffinePoint(-1.0f, -1.0f, -1.0f, 1.0f);
+		pointsTable[1] = new AffinePoint(1.0f, -1.0f, -1.0f, 1.0f);
+		pointsTable[2] = new AffinePoint(1.0f, 1.0f, -1.0f, 1.0f);
+		pointsTable[3] = new AffinePoint(-1.0f, 1.0f, -1.0f, 1.0f);
+		pointsTable[4] = new AffinePoint(-1.0f, 1.0f, 1.0f, 1.0f);
+		pointsTable[5] = new AffinePoint(1.0f, 1.0f, 1.0f, 1.0f);
+		pointsTable[6] = new AffinePoint(1.0f, -1.0f, 1.0f, 1.0f);
+		pointsTable[7] = new AffinePoint(-1.0f, -1.0f, 1.0f, 1.0f);
+
+		// second cube
+/*
+		pointsTable[8]  = new AffinePoint(4.5f, 0f, -1.0f, 1.0f);
+		pointsTable[9]  = new AffinePoint(4.5f, 0f, 1.0f, 1.0f);
+		pointsTable[10] = new AffinePoint(4.145f, -0.145f, -1.0f, 1.0f);
+		pointsTable[11] = new AffinePoint(4.145f, -0.145f, 1.0f, 1.0f);
+		pointsTable[12] = new AffinePoint(4.0f, -0.5f, -1.0f, 1.0f);
+		pointsTable[13] = new AffinePoint(4.0f, -0.5f, 1.0f, 1.0f);
+		pointsTable[14] = new AffinePoint(4.145f, -0.855f, -1.0f, 1.0f);
+		pointsTable[15] = new AffinePoint(4.145f, -0.855f, 1.0f, 1.0f);
+		pointsTable[16] = new AffinePoint(4.5f, -1.0f, -1.0f, 1.0f);
+		pointsTable[17] = new AffinePoint(4.5f, -1.0f, 1.0f, 1.0f);
+		pointsTable[18] = new AffinePoint(4.855f, -0.855f, -1.0f, 1.0f);
+		pointsTable[19] = new AffinePoint(4.855f, -0.855f, 1.0f, 1.0f);
+		pointsTable[20] = new AffinePoint(5.0f, -0.5f, -1.0f, 1.0f);
+		pointsTable[22] = new AffinePoint(4.855f, -0.145f, -1.0f, 1.0f);
+		pointsTable[23] = new AffinePoint(4.855f, -0.145f, 1.0f, 1.0f);
+*/
+//		pointsTable[8]  = new AffinePoint(4.5f, -1.0f, 0f, 1.0f);
+//		pointsTable[9]  = new AffinePoint(4.5f, 1.0f, 0f, 1.0f);
+//		pointsTable[10] = new AffinePoint(4.145f, -1.0f, -0.145f, 1.0f);
+//		pointsTable[11] = new AffinePoint(4.145f, 1.0f, -0.145f, 1.0f);
+//		pointsTable[12] = new AffinePoint(4.0f, -1.0f, -0.5f, 1.0f);
+//		pointsTable[13] = new AffinePoint(4.0f, 1.0f, -0.5f, 1.0f);
+//		pointsTable[14] = new AffinePoint(4.145f, -1.0f, -0.855f, 1.0f);
+//		pointsTable[15] = new AffinePoint(4.145f, 1.0f, -0.855f, 1.0f);
+//		pointsTable[16] = new AffinePoint(4.5f, -1.0f, -1.0f, 1.0f);
+//		pointsTable[17] = new AffinePoint(4.5f, 1.0f, -1.0f, 1.0f);
+//		pointsTable[18] = new AffinePoint(4.855f, -1.0f, -0.855f, 1.0f);
+//		pointsTable[19] = new AffinePoint(4.855f, 1.0f, -0.855f, 1.0f);
+//		pointsTable[20] = new AffinePoint(5.0f, -1.0f, -0.5f, 1.0f);
+//		pointsTable[21] = new AffinePoint(5.0f, 1.0f, -0.5f, 1.0f);
+//		pointsTable[22] = new AffinePoint(4.855f, -1.0f, -0.145f, 1.0f);
+//		pointsTable[23] = new AffinePoint(4.855f,  1.0f, -0.145f, 1.0f);
+
+	}
+
+	private void InitializeProjectionMatrix() {
+		for (int i = 0; i < 4; i++) {
+			projectionMatrix[i] = new float[4];
+		}
+		for (int i = 0; i < 4; i++) {
+			for (int j = 0; j < 4; j++) {
+
+				projectionMatrix[i][j] = 0;
+			}
+		}
+		/*
+		 * PERPECTIVE PROJECTION MATRIX 
+		 * |d  0  Cx 0| 
+		 * |0 -d  Cy 0| 
+		 * |0  0  0  0| 
+		 * |0  0  1  0|
+		 * 
+		 * |d  0  0  0|
+		 * |0 -d  0  0|
+		 * |Cx Cy 0  1|
+		 * |0  0  1  0|
+		 */
+		projectionMatrix[0][0] = d;
+		projectionMatrix[1][1] = -d; // should be d
+		projectionMatrix[2][0] = Cx;
+		projectionMatrix[2][1] = Cy;
+		projectionMatrix[3][2] = 1; // should be 0
+		projectionMatrix[2][3] = 1;
+	}
+
+	private void InitializeYRotationMatrix() {
+		for (int i = 0; i < 4; i++) {
+			YRotationMatrix[i] = new float[4];
+		}
+		for (int i = 0; i < 4; i++) {
+			for (int j = 0; j < 4; j++) {
+				YRotationMatrix[i][j] = 0;
+			}
+		}
+	}
+
+	private void InitializeXRotationMatrix() {
+		for (int i = 0; i < 4; i++) {
+			XRotationMatrix[i] = new float[4];
+		}
+		for (int i = 0; i < 4; i++) {
+			for (int j = 0; j < 4; j++) {
+				XRotationMatrix[i][j] = 0;
+			}
+		}
+	}
+
+	private void ChangeYRotationMatrix(int pointNum) {
+		double angle;
+		if (pointNum < 4) {
+			angle = Math.PI * YDegrees / 180.0;
+		} else {
+			angle = Math.PI * (YDegrees + CylinderDegreeY) / 180.0;
+		}
+		/*
+		 * ROTATION AROUND Y AXIS matrix[COL][ROW]
+		 * 
+		 * |cos 0 -sin  0|
+		 * |0   1   1   0|
+		 * |sin 0  cos  0|
+		 * |0   0   0   1|
+		 */
+		YRotationMatrix[0][0] = (float) Math.cos(angle);
+		YRotationMatrix[2][0] = -(float) Math.sin(angle); // should be positive
+		YRotationMatrix[1][1] = 1;
+		YRotationMatrix[0][2] = (float) Math.sin(angle); // should be negative
+		YRotationMatrix[2][2] = (float) Math.cos(angle);
+		YRotationMatrix[3][3] = 1;
+	}
+
+	private void ChangeXRotationMatrix() {
+		/*
+		 * ROTATION AROUND X AXIS matrix[COL][ROW]
+		 * 
+		 * |1  0   0   0| 
+		 * |0 cos -sin 0| 
+		 * |0 sin cos  0| 
+		 * |0  0   0   1|
+		 */
+
+		double angle = Math.PI * XDegrees / 180.0;
+		XRotationMatrix[0][0] = 1;
+		XRotationMatrix[1][1] = (float) Math.cos(angle);
+		XRotationMatrix[2][1] = -(float) Math.sin(angle);
+		XRotationMatrix[1][2] = (float) Math.sin(angle);
+		XRotationMatrix[2][2] = (float) Math.cos(angle);
+		XRotationMatrix[3][3] = 1;
+	}
+
+	private void InitializeTranslationMatrix() {
+		/*
+		 * TRANSLATION MATRIX (Shift in line with z axis) matrix[COL][ROW] 
+		 * |1 0 0 0| 
+		 * |0 1 0 0| 
+		 * |0 0 1 7| 
+		 * |0 0 0 1|
+		 */
+		for (int i = 0; i < 4; i++) {
+			matrixT[i] = new float[4];
+			for (int j = 0; j < 4; j++) {
+				if (i == j) {
+					matrixT[i][j] = 1;
+				} else {
+					matrixT[i][j] = 0;
+				}
+			}
+		}
+		matrixT[3][2] = 7;
+	}
+
+	private void PointPosition(AffinePoint mP, int pointNum) {
+		// Switching from points on the cube to the points on the cylinder
+		if (pointNum == 8) {
+			ChangeYRotationMatrix(9);
+		}
+		float[][] pointMatrix = new float[4][];
+		float[][] postTranslationMatrix = new float[4][];
+		for (int i = 0; i < 4; i++) {
+			pointMatrix[i] = new float[4];
+			postTranslationMatrix[i] = new float[4];
+			for (int j = 0; j < 4; j++) {
+				pointMatrix[i][j] = 0;
+				postTranslationMatrix[i][j] = 0;
+			}
+		}
+
+		/****************** ROTATION * POINTS *******/
+		float[] currentVector = new float[4];
+		for (int i = 0; i < 4; i++)
+			currentVector[i] = 0;
+
+		for (int i = 0; i < 4; i++) {
+			float sum = 0;
+			for (int j = 0; j < 4; j++) {
+				sum += mP.coordinates[j] * YRotationMatrix[j][i];
+			}
+			currentVector[i] = sum;
+		}
+
+		float[] tmpVector = new float[4];
+		for (int j = 0; j < 4; j++) {
+			tmpVector[j] = currentVector[j];
+		}
+		for (int i = 0; i < 4; i++) {
+			float sum = 0;
+			for (int j = 0; j < 4; j++) {
+
+				sum += tmpVector[j] * XRotationMatrix[j][i];
+
+			}
+			currentVector[i] = sum;
+		}
+
+		/***** PROJECTION * TRANSLATION **********/
+		// float[] tmpVector = new float[4];
+		for (int j = 0; j < 4; j++) {
+			tmpVector[j] = currentVector[j];
+		}
+		for (int i = 0; i < 4; i++) {
+			float sum = 0;
+			for (int j = 0; j < 4; j++) {
+
+				sum += tmpVector[j] * matrixT[j][i];
+
+			}
+			currentVector[i] = sum;
+		}
+		/********* TRANSLATION * ROTATION *********/
+		/*
+		 * for (int i = 0; i < 4; i++) { for (int j = 0; j < 4; j++) {
+		 * pointMatrix[i][j] = 0; } }
+		 */
+		// float[] tmpVector = new float[4];
+		for (int j = 0; j < 4; j++) {
+			tmpVector[j] = currentVector[j];
+		}
+		for (int i = 0; i < 4; i++) {
+
+			float sum = 0;
+			for (int j = 0; j < 4; j++) {
+
+				sum += tmpVector[j] * projectionMatrix[j][i];
+
+			}
+			currentVector[i] = sum;
+		}
+
+		for (int i = 0; i < 4; i++) {
+
+			mP.coordinates[i] = currentVector[i];
+
+		}
+		for (int i = 0; i < 4; i++) {
+			mP.coordinates[i] /= mP.coordinates[3];
+		}
+		// mP.coordinates[0] += 500;
+		// mP.coordinates[1] += 350;
+	}
+
+	private void MoveCylinderRight() {
+		//for (;;) {
+
+			InitializePointTable();
+			InitializeYRotationMatrix();
+			InitializeProjectionMatrix();
+			
+			CylinderDegreeY += degreeStep;
+			ChangeYRotationMatrix(0);
+			repaint();
+		//}
+
+	}
+	
+	@Override
+	protected void paintComponent(Graphics g) {
+		bi = new BufferedImage(800, 600, BufferedImage.TYPE_INT_RGB);
+		g2d = (Graphics2D) bi.getGraphics();
+		getArray(pixels);
+				
+		drawScene();
+		
+		setArray(pixels);
+		g.drawImage(bi, 0 , 0 , null);
+	}
+
+
+
+	private void drawScene() {
+		
+		for (int i = 0; i < 8; i++)
+        {
+            PointPosition(pointsTable[i], i);
+        }
+
+        /**CUBE FRONT FACE**/
+		//point 0 - point 1
+		drawLine((int)pointsTable[0].coordinates[0], (int)pointsTable[0].coordinates[1], pointsTable[0].coordinates[2],(int)pointsTable[1].coordinates[0], (int)pointsTable[1].coordinates[1], pointsTable[1].coordinates[2],pixels, 0);
+        //point 1 - point 2
+		drawLine((int)pointsTable[1].coordinates[0], (int)pointsTable[1].coordinates[1], (int)pointsTable[2].coordinates[0], (int)pointsTable[2].coordinates[1]);
+        //point 2 - point 3 
+		drawLine((int)pointsTable[2].coordinates[0], (int)pointsTable[2].coordinates[1], (int)pointsTable[3].coordinates[0], (int)pointsTable[3].coordinates[1]);
+        //point 3 - point 0
+        MidpointLine((int)pointsTable[3].coordinates[0], (int)pointsTable[3].coordinates[1], (int)pointsTable[0].coordinates[0], (int)pointsTable[0].coordinates[1]);
+
+        /**CUBE BACK FACE**/
+        //point 4 - point 5
+        MidpointLine((int)pointsTable[4].coordinates[0], (int)pointsTable[4].coordinates[1], (int)pointsTable[5].coordinates[0], (int)pointsTable[5].coordinates[1]);
+        //point 5 - point 6
+        MidpointLine((int)pointsTable[5].coordinates[0], (int)pointsTable[5].coordinates[1], (int)pointsTable[6].coordinates[0], (int)pointsTable[6].coordinates[1]);
+        //point 6 - point 7
+        MidpointLine((int)pointsTable[6].coordinates[0], (int)pointsTable[6].coordinates[1], (int)pointsTable[7].coordinates[0], (int)pointsTable[7].coordinates[1]);
+        //point 7 - point 0
+        MidpointLine((int)pointsTable[7].coordinates[0], (int)pointsTable[7].coordinates[1], (int)pointsTable[4].coordinates[0], (int)pointsTable[4].coordinates[1]);
+
+        /**CUBE DEPTH EDGES**/
+        //point 0 - point 7
+        MidpointLine((int)pointsTable[0].coordinates[0], (int)pointsTable[0].coordinates[1], (int)pointsTable[7].coordinates[0], (int)pointsTable[7].coordinates[1]);
+        //point 1 - point 6
+        MidpointLine((int)pointsTable[1].coordinates[0], (int)pointsTable[1].coordinates[1], (int)pointsTable[6].coordinates[0], (int)pointsTable[6].coordinates[1]);
+        //point 2 - point 5
+        MidpointLine((int)pointsTable[2].coordinates[0], (int)pointsTable[2].coordinates[1], (int)pointsTable[5].coordinates[0], (int)pointsTable[5].coordinates[1]);
+        //point 3 - point 4
+        MidpointLine((int)pointsTable[3].coordinates[0], (int)pointsTable[3].coordinates[1], (int)pointsTable[4].coordinates[0], (int)pointsTable[4].coordinates[1]);
+
+ 
+        int[] points = new int[16];
+        int[] points2 = new int[16]; 
+//        for(int i = 8; i < 23; i += 2){
+//        	
+//            points[i-8]=(int)pointsTable[i].coordinates[0];
+//            points[i-7]=(int)pointsTable[i].coordinates[1];
+//            points2[i - 8] = (int)pointsTable[i+1].coordinates[0];
+//            points2[i - 7] = (int)pointsTable[i+1].coordinates[1];
+//        }
+
+	}
+	
+	
+	KeyListener KL = new KeyListener() {
+		
+		@Override
+		public void keyTyped(KeyEvent e) {
+			// TODO Auto-generated method stub
+			
+		}
+		
+		@Override
+		public void keyReleased(KeyEvent e) {
+			// TODO Auto-generated method stub
+			
+		}
+		
+		@Override
+		public void keyPressed(KeyEvent event) {
+		       
+	        if (event.getKeyCode() == KeyEvent.VK_UP) {
+	            
+	        	InitializePointTable();
+	            // InitializeYRotationMatrix();
+	            InitializeXRotationMatrix();
+	            InitializeProjectionMatrix();
+	            
+	            XDegrees += degreeStep;
+	            ChangeYRotationMatrix(0);
+	            ChangeXRotationMatrix();
+	            
+	            repaint();
+	            }
+	        if (event.getKeyCode() == KeyEvent.VK_DOWN) {
+	           
+	        	InitializePointTable();
+	            //InitializeYRotationMatrix();
+	            InitializeXRotationMatrix();
+	            InitializeProjectionMatrix();
+	            
+	            XDegrees -= degreeStep;
+	            ChangeYRotationMatrix(0);
+	            ChangeXRotationMatrix();
+	            
+	           
+	            repaint();
+	            }
+	        if (event.getKeyCode() == KeyEvent.VK_RIGHT) {
+	            
+	        	InitializePointTable();
+	            InitializeYRotationMatrix();
+	            InitializeProjectionMatrix();
+	            
+	            YDegrees += degreeStep;
+	            ChangeYRotationMatrix(0);
+	            
+	            
+	        	
+	            repaint();
+	            }
+	        if (event.getKeyCode() == KeyEvent.VK_LEFT) {
+	            
+	        	InitializePointTable();
+	            InitializeYRotationMatrix();
+	            InitializeProjectionMatrix();
+	            
+	            
+	            
+	            YDegrees -= degreeStep;
+	            ChangeYRotationMatrix(0);
+	            
+	        	repaint();
+	            }
+	       
+	    }
+	};    
+	public table[] drawLine(int x1, int y1, double z1, int x2, int y2, double z2, int[][] panelArray, int co) {
+		
+		
+		int w = x2 - x1;
+		int h = y2 - y1;
+		int dx1 = 0, dy1 = 0, dx2 = 0, dy2 = 0;
+		if (w < 0)
+			dx1 = -1;
+		else if (w > 0)
+			dx1 = 1;
+		if (h < 0)
+			dy1 = -1;
+		else if (h > 0)
+			dy1 = 1;
+		if (w < 0)
+			dx2 = -1;
+		else if (w > 0)
+			dx2 = 1;
+		int longest = Math.abs(w);
+		int shortest = Math.abs(h);
+		if (!(longest > shortest)) {
+			longest = Math.abs(h);
+			shortest = Math.abs(w);
+			if (h < 0)
+				dy2 = -1;
+			else if (h > 0)
+				dy2 = 1;
+			dx2 = 0;
+		}
+		int numerator = longest >> 1;
+			double z_def = z1 - z2;
+			z_def = - z_def;
+			double z_step = z_def/numerator;
+		table z_buf[] = new table[longest+1];
+			
+		for (int i = 0; i <= longest; i++) {
+	
+			z_buf[i] = new table (z1 + i*z_step, x1, y1);
+			
+			
+			switch (co){
+				case 1:
+					if(Z_Buf[x1][y1] <= z1 + i*z_step){
+						panelArray[x1][y1] = Color.RED.getRGB();
+						Z_Buf[x1][y1] = z1 + i*z_step;
+						
+					}
+					Z_Buf1[x1][y1] = z1 + i*z_step;
+					break;
+				case 2:
+					if(Z_Buf[x1][y1] <= z1 + i*z_step){
+						panelArray[x1][y1] = Color.BLUE.getRGB();
+						Z_Buf[x1][y1] = z1 + i*z_step;
+						
+					}
+					Z_Buf2[x1][y1] = z1 + i*z_step;
+					break;
+				case 3:
+					if(Z_Buf[x1][y1] <= z1 + i*z_step){
+						panelArray[x1][y1] = Color.GREEN.getRGB();
+						Z_Buf[x1][y1] = z1 + i*z_step;
+						
+					}
+					Z_Buf3[x1][y1] = z1 + i*z_step;
+					break;
+				case 4:
+					if(Z_Buf[x1][y1] <= z1 + i*z_step){
+						panelArray[x1][y1] = Color.YELLOW.getRGB();
+						Z_Buf[x1][y1] = z1 + i*z_step;
+					}
+					Z_Buf4[x1][y1] = z1 + i*z_step;
+					break;
+			}
+			 
+			
+			numerator += shortest;
+			if (!(numerator < longest)) {
+				numerator -= longest;
+				x1 += dx1;
+				y1 += dy1;
+			} else {
+				x1 += dx2;
+				y1 += dy2;
+			}
+		}
+		return z_buf;
+	}
+	
+	public class table{
+		public double zbuf;
+		public int x;
+		int y;
+		
+		public table(double zbuf, int x, int y){
+			this.zbuf = zbuf;
+			this.x = x;
+			this.y = y;
+		}
+	}
+}
+
+
+	
+	

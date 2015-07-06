@@ -1,0 +1,171 @@
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.Image;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
+import java.util.Random;
+
+import javax.imageio.ImageIO;
+import javax.swing.JPanel;
+
+public class PictureBox extends JPanel {
+
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+
+	private Image scaledImage;
+	private int panelW;
+	private int panelH;
+
+	public PictureBox(int panelW, int panelH) {
+		super();
+		this.panelW = panelW;
+		this.panelH = panelH;
+	}
+
+	public void loadImage(String file) throws IOException {
+		Image image = ImageIO.read(new File(file));
+		scaleImage(image);
+		repaint();
+	}
+
+	// e.g., containing frame might call this from formComponentResized
+	public void scaleImage(Image image) {
+		setScaledImage(image);
+		repaint();
+	}
+
+	public void paintComponent(Graphics g) {
+		super.paintComponent(g);
+		if (scaledImage != null) {
+
+			g.drawImage(scaledImage,
+					(getWidth() / 2) - (scaledImage.getWidth(this) / 2), 0,
+					this);
+		}
+	}
+
+	private void setScaledImage(Image image) {
+
+		if (image != null) {
+			float iw = image.getWidth(this);
+			float ih = image.getHeight(this);
+			float pw = panelW;
+			float ph = panelH;
+
+			if (pw < iw || ph < ih) {
+
+				if ((pw / ph) > (iw / ih)) {
+					iw = -1;
+					ih = ph;
+				} else {
+					iw = pw;
+					ih = -1;
+				}
+				// prevent errors if panel is 0 wide or high
+				if (iw == 0) {
+					iw = -1;
+				}
+				if (ih == 0) {
+					ih = -1;
+				}
+				scaledImage = image.getScaledInstance(new Float(iw).intValue(),
+						new Float(ih).intValue(), Image.SCALE_DEFAULT);
+			} else {
+				scaledImage = image;
+			}
+		}
+	}
+
+	/* Convert image to 2D array using getRGB */
+	public int[][] imageToArray(Image image) {
+		
+		BufferedImage img = new BufferedImage(image.getWidth(null),
+				scaledImage.getHeight(null), BufferedImage.TYPE_INT_RGB);
+		int width = img.getWidth();
+		int height = img.getHeight();
+		int[][] result = new int[height][width];
+
+		for (int row = 0; row < height; row++) {
+			for (int col = 0; col < width; col++) {
+				result[row][col] = img.getRGB(col, row);
+
+			}
+		}
+		return result;
+	}
+
+	public Image arrayToImage(int pixels[][]) {
+		int w = pixels.length;
+		int h = pixels[0].length;
+		BufferedImage image = new BufferedImage(h, w,
+				BufferedImage.TYPE_INT_RGB);
+		for (int i = 0; i < w; i++) {
+			for (int j = 0; j < h; j++) {
+				
+				image.setRGB(j, i, pixels[i][j]);
+			}
+		}
+		return image;
+	}
+
+	public void saveImage(String name) {
+
+		File output = new File(name);
+		BufferedImage img = new BufferedImage(scaledImage.getWidth(null),
+				scaledImage.getHeight(null), BufferedImage.TYPE_INT_RGB);
+		Graphics2D g = img.createGraphics();
+		g.drawImage(scaledImage, 0, 0, null);
+		g.dispose();
+
+		try {
+			ImageIO.write(img, "jpg", output);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+	public static int randInt(int min, int max) {
+	    Random rand = new Random();
+	    int randomNum = rand.nextInt((max - min) + 1) + min;
+	    return randomNum;
+	}
+	public int [][] randDithering (Image image, int k) {
+		int [][] imgArray = imageToArray(image);
+		int interStep = 256 / k;
+		int [] intervals = new int [k+1];
+		int [] randColor = new int [k];
+		
+		for (int i=0; i <k+1; i++) {
+			intervals[i] = i * interStep;
+		}
+		
+		for (int i=0; i< intervals.length-1; i++ ) {
+			randColor[i] = randInt( intervals[i], intervals[i+1]);
+		}
+		
+		for (int i=0; i<imgArray.length; i++) {
+			for (int j=0; j<imgArray[0].length; j++) {
+				int l;
+				for (l=0; l<intervals.length; l++) {
+					if (imgArray[i][j]<intervals[l]) {
+						l--;
+						break;
+					}
+				}
+				if (imgArray[i][j] < randColor[l]){
+					imgArray[i][j] = intervals[l];
+				} else {
+					imgArray[i][j] = intervals[l+1];
+				}
+				
+			}
+		}
+		
+		return imgArray;
+		
+	}
+
+}

@@ -1,0 +1,322 @@
+import java.awt.Color;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.Image;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
+import java.util.Random;
+
+import javax.imageio.ImageIO;
+import javax.swing.JPanel;
+
+public class PictureBox extends JPanel {
+
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+
+	private Image scaledImage;
+	private int panelW;
+	private int panelH;
+
+	public PictureBox(int panelW, int panelH) {
+		super();
+		this.panelW = panelW;
+		this.panelH = panelH;
+	}
+
+	public void loadImage(String file) throws IOException {
+		Image image = ImageIO.read(new File(file));
+		scaleImage(image);
+		repaint();
+		revalidate();
+	}
+
+	// e.g., containing frame might call this from formComponentResized
+	public void scaleImage(Image image) {
+		setScaledImage(image);
+		repaint();
+	}
+
+	public void paintComponent(Graphics g) {
+		super.paintComponent(g);
+		if (scaledImage != null) {
+
+			g.drawImage(scaledImage,
+					(getWidth() / 2) - (scaledImage.getWidth(this) / 2), 0,
+					this);
+		}
+	}
+
+	private void setScaledImage(Image image) {
+
+		if (image != null) {
+			float iw = image.getWidth(this);
+			float ih = image.getHeight(this);
+			float pw = panelW;
+			float ph = panelH;
+
+			if (pw < iw || ph < ih) {
+
+				if ((pw / ph) > (iw / ih)) {
+					iw = -1;
+					ih = ph;
+				} else {
+					iw = pw;
+					ih = -1;
+				}
+				// prevent errors if panel is 0 wide or high
+				if (iw == 0) {
+					iw = -1;
+				}
+				if (ih == 0) {
+					ih = -1;
+				}
+				scaledImage = image.getScaledInstance(new Float(iw).intValue(),
+						new Float(ih).intValue(), Image.SCALE_DEFAULT);
+			} else {
+				scaledImage = image;
+			}
+		}
+	}
+
+	/* Convert image to 2D array using getRGB */
+	public int[][] imageToArray(Image image) {
+
+		BufferedImage img = new BufferedImage(image.getWidth(null),
+				image.getHeight(null), BufferedImage.TYPE_INT_RGB);
+
+		Graphics2D bGr = img.createGraphics();
+		bGr.drawImage(scaledImage, 0, 0, null);
+		bGr.dispose();
+
+		int width = img.getWidth();
+		int height = img.getHeight();
+		int[][] result = new int[height][width];
+
+		for (int row = 0; row < height; row++) {
+			for (int col = 0; col < width; col++) {
+				result[row][col] = img.getRGB(col, row);
+
+			}
+		}
+		return result;
+	}
+
+	public Image arrayToImage(int pixels[][]) {
+		int w = pixels.length;
+		int h = pixels[0].length;
+		BufferedImage image = new BufferedImage(h, w,
+				BufferedImage.TYPE_INT_RGB);
+		for (int i = 0; i < w; i++) {
+			for (int j = 0; j < h; j++) {
+
+				image.setRGB(j, i, pixels[i][j]);
+			}
+		}
+		return image;
+	}
+
+	public void saveImage(String name) {
+
+		File output = new File(name);
+		BufferedImage img = new BufferedImage(scaledImage.getWidth(null),
+				scaledImage.getHeight(null), BufferedImage.TYPE_INT_RGB);
+		Graphics2D g = img.createGraphics();
+		g.drawImage(scaledImage, 0, 0, null);
+		g.dispose();
+
+		try {
+			ImageIO.write(img, "jpg", output);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	public static int randInt(int min, int max) {
+		Random rand = new Random();
+		int randomNum = rand.nextInt((max - min) + 1) + min;
+		return randomNum;
+	}
+
+	public int[][] randDithering(Image image, int k) {
+
+		int[][] imgArray = imageToArray(image);
+		int interStep = 255 / k;
+		int[] intervals = new int[k + 1];
+		int[] randColor = new int[k];
+
+		for (int i = 0; i < k + 1; i++) {
+			intervals[i] = i * interStep;
+			System.out.println(intervals[i]);
+		}
+
+		for (int i = 0; i < intervals.length - 1; i++) {
+			
+			System.out.println(randColor[i]);
+		}
+
+		for (int i = 0; i < imgArray.length; i++) {
+			for (int j = 0; j < imgArray[0].length; j++) {
+				int l;
+				
+				Color q = new Color(imgArray[i][j]);
+
+				int r = q.getRed();
+				int g = q.getGreen();
+				int b = q.getBlue();
+
+				double I = 0.299 * r + 0.587 * g + 0.114 * b;
+				//System.out.println("<"+I+">");
+
+				for (l = 0; l <= intervals.length - 2; ++l) {
+					randColor[l] = randInt(intervals[l], intervals[l + 1]);
+					
+					if (I >= intervals[l] && I < intervals[l + 1]) {
+						if (I < randColor[l]) {
+							Color c = new Color(intervals[l], intervals[l],
+									intervals[l]);
+							imgArray[i][j] = c.getRGB();
+
+						} else {
+							Color c = new Color(intervals[l + 1],
+									intervals[l + 1], intervals[l + 1]);
+							imgArray[i][j] = c.getRGB();
+
+						}
+
+					}
+					else {
+						//System.out.println("I am here!"+I);
+					}
+
+				}
+
+			}
+		}
+
+		return imgArray;
+
+	}
+
+	private int minDistFinder(int[][] a, int[] b) {
+
+		int[] dist = new int[a.length];
+		for (int i = 0; i < a.length; i++) {
+			int s = ((a[i][0] - b[0]) * (a[i][0] - b[0]) + (a[i][1] - b[1])
+					* (a[i][1] - b[1]) + (a[i][2] - b[2]) * (a[i][2] - b[2]));
+			dist[i] = (int) Math.sqrt(s);
+		}
+		int min = 0;
+		for (int i = 0; i < dist.length; i++) {
+			if (dist[min] > dist[i]) {
+				min = i;
+			}
+		}
+
+		return min;
+	}
+
+	public int[][] kMeanQuantization(Image image, int k) {
+
+		int[][] centroids = new int[k][3];
+		int[][] imgArray = imageToArray(image);
+		int[][] imgArrayC = new int[imgArray.length][imgArray[0].length];
+		
+		boolean loop = true;
+		for (int i = 0; i < centroids.length; i++) {
+			for (int j = 0; j < centroids[0].length; j++) {
+
+				centroids[i][j] = randInt(0, 255);
+			}
+		}
+		int[][] sums = new int[centroids.length][3];
+		while (loop) {
+
+			for (int i = 0; i < imgArray.length; i++) {
+				for (int j = 0; j < imgArray[0].length; j++) {
+
+					int[] c = new int[3];
+					c[0] = (new Color(imgArray[i][j])).getRed();
+					c[1] = (new Color(imgArray[i][j])).getGreen();
+					c[2] = (new Color(imgArray[i][j])).getBlue();
+
+					int min = minDistFinder(centroids, c);
+
+					imgArrayC[i][j] = min;
+					
+
+				}
+			}
+			
+			int[] counts = new int[centroids.length];
+			for (int i = 0; i < imgArray.length; i++) {
+				for (int j = 0; j < imgArray[0].length; j++) {
+					
+					
+						int t= imgArrayC[i][j];
+							
+							/*problem*/
+							sums[t][0] += (new Color(imgArray[i][j])).getRed();
+							sums[t][1] += (new Color(imgArray[i][j])).getGreen();
+							sums[t][2] += (new Color(imgArray[i][j])).getBlue();
+							counts[t]++;
+							
+						
+
+				}
+			}
+
+			for (int i = 0; i < sums.length; i++) {
+				if (counts[i] != 0){
+					
+				sums[i][0] = sums[i][0] / counts[i];
+				sums[i][1] = sums[i][1] / counts[i];
+				sums[i][2] = sums[i][2] / counts[i];
+				}
+			}
+			
+			int check=0;
+			for(int i=0; i< centroids.length; i++) {
+				
+				check+=sums[i][0]-centroids[i][0] + sums[i][1]-centroids[i][1] + sums[i][2]-centroids[i][2];
+				
+				
+				
+			}
+			if(check == 0){
+				loop = false;
+			}
+			else {
+				for(int i=0; i< centroids.length; i++) {
+					
+				centroids[i][0] = sums[i][0] ;
+				
+				centroids[i][1] = sums[i][1] ;
+				
+				centroids[i][2] = sums[i][2] ;
+				}
+			}
+		}
+		for (int i = 0; i < imgArray.length; i++) {
+			for (int j = 0; j < imgArray[0].length; j++) {
+				
+				int t = imgArrayC[i][j];
+	
+					imgArray[i][j] = (new Color(sums[t][0], sums[t][1], sums[t][2]).getRGB());
+				
+			}
+		}
+		
+		return imgArray;
+	}
+
+	Image getImage() {
+		if (scaledImage != null)
+			return scaledImage;
+		return null;
+	}
+
+}

@@ -1,0 +1,298 @@
+import java.awt.Color;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.Point;
+import java.awt.Polygon;
+import java.awt.Rectangle;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
+import java.awt.image.BufferedImage;
+
+import javax.swing.JPanel;
+
+
+public class DrawingPanel extends JPanel implements KeyListener {
+	
+	private static final double DEG_TO_RAD = 0.017453292;
+	private double modelScale = 10;
+	private int xScreenCenter = 800/2;
+	private int yScreenCenter = 600/2;
+	private int Z_Buf[][] = new int [600][800];
+	
+	private int[] screenPosition2 = new int []{ 0, 0, 20 };
+	
+	private int[] viewAngle = new int[]{ 45, 90, 90 };
+	
+	double CT = Math.cos( DEG_TO_RAD * viewAngle[0] );
+	double ST = Math.sin( DEG_TO_RAD * viewAngle[0] );
+	double CP = Math.cos( DEG_TO_RAD * viewAngle[1] );
+	double SP = Math.sin( DEG_TO_RAD * viewAngle[1] );
+
+	
+	int p1[] = new int[]{1, 1, 1};
+	int p2[] = new int[]{1, -1, 1};
+	int p3[] = new int[]{-1, -1, 1};
+	int p4[] = new int[]{-1, 1, 1};
+	
+	int p5[] = new int[]{1, 1, -1};
+	int p6[] = new int[]{1, -1, -1};
+	int p7[] = new int[]{-1,-1, -1};
+	int p8[] = new int[]{-1, 1, -1};
+	
+	int p01[] = new int[]{5, 5, 5};
+	int p02[] = new int[]{5, 1, 5};
+	int p03[] = new int[]{1, 1, 5};
+	int p04[] = new int[]{1, 5, 5};
+	
+	int p05[] = new int[]{5, 5, 1};
+	int p06[] = new int[]{5, 1, 1};
+	int p07[] = new int[]{1, 1, 1};
+	int p08[] = new int[]{1, 5, 1};
+	
+	
+	int op1[] = new int[4];
+	int op2[] = new int[4];
+	int op3[] = new int[4];
+	int op4[] = new int[4];
+	int op5[] = new int[4];
+	int op6[] = new int[4];
+	int op7[] = new int[4];
+	int op8[] = new int[4];
+	
+	int op01[] = new int[3];
+	int op02[] = new int[3];
+	int op03[] = new int[3];
+	int op04[] = new int[3];
+	int op05[] = new int[3];
+	int op06[] = new int[3];
+	int op07[] = new int[3];
+	int op08[] = new int[3];
+	
+	
+	BufferedImage image = new BufferedImage(800, 600, BufferedImage.TYPE_INT_RGB);
+	Graphics2D g2;
+	
+	public DrawingPanel(){
+		setFocusable(true);
+		addKeyListener(this);
+	}
+
+	@Override
+	protected void paintComponent(Graphics g) {
+		
+		g2 = (Graphics2D) image.getGraphics();
+		
+		g2.setColor(Color.BLACK);
+		g2.fill(new Rectangle(0, 0, 800, 600));
+		
+		CT = Math.cos( DEG_TO_RAD * viewAngle[0] );
+		ST = Math.sin( DEG_TO_RAD * viewAngle[0] );
+		CP = Math.cos( DEG_TO_RAD * viewAngle[1] );
+		SP = Math.sin( DEG_TO_RAD * viewAngle[1] );
+		
+		int pixs[][] = new int [800][600];
+			getArray(pixs);
+			
+			
+		
+		projectPoint1(p1, op1);
+		projectPoint1(p2, op2);
+		projectPoint1(p3, op3);
+		projectPoint1(p4, op4);
+		projectPoint1(p5, op5);
+		projectPoint1(p6, op6);
+		projectPoint1(p7, op7);
+		projectPoint1(p8, op8);
+		
+		
+		
+		
+		int xpoints1[] = new int[]{op1[0],op2[0],op3[0],op4[0]};
+		int ypoints1[] = new int[]{op1[1],op2[1],op3[1],op4[1]};
+		
+		int xpoints2[] = new int[]{op5[0],op6[0],op7[0],op8[0]};
+		int ypoints2[] = new int[]{op5[1],op6[1],op7[1],op8[1]};
+		
+		int xpoints3[] = new int[]{op5[0],op1[0],op2[0],op6[0]};
+		int ypoints3[] = new int[]{op5[1],op1[1],op2[1],op6[1]};
+		
+		int xpoints4[] = new int[]{op7[0],op3[0],op4[0],op8[0]};
+		int ypoints4[] = new int[]{op7[1],op3[1],op4[1],op8[1]};
+		
+		int xpoints5[] = new int[]{op2[0],op3[0],op7[0],op6[0]};
+		int ypoints5[] = new int[]{op2[1],op3[1],op7[1],op6[1]};
+		
+		int xpoints6[] = new int[]{op1[0],op4[0],op8[0],op5[0]};
+		int ypoints6[] = new int[]{op1[1],op4[1],op8[1],op5[1]};
+		
+		Polygon poly1 = new Polygon(xpoints1, ypoints1, 4);
+		Polygon poly2 = new Polygon(xpoints2, ypoints2, 4);
+		Polygon poly3 = new Polygon(xpoints3, ypoints3, 4);
+		Polygon poly4 = new Polygon(xpoints4, ypoints4, 4);
+		Polygon poly5 = new Polygon(xpoints5, ypoints5, 4);
+		Polygon poly6 = new Polygon(xpoints6, ypoints6, 4);
+		
+		g2.setColor(Color.GREEN);
+		
+		for(int i=0; i < image.getWidth(); i++){
+			for (int j=0; j < image.getHeight(); j++){
+				
+				if(poly1.contains(new Point(i, j))){
+					Color c = new Color(0,0,255);
+					pixs[i][j] = c.getRGB();
+					}
+				else if (poly2.contains(new Point(i, j))) {
+					Color c = new Color(0,255,0);
+					pixs[i][j] = c.getRGB();
+				}
+				else if(poly3.contains(new Point(i, j))) {
+					Color c = new Color(255,0,0);
+					pixs[i][j] = c.getRGB();
+				}
+				else if(poly6.contains(new Point(i, j))) {
+					Color c = new Color(255,100,0);
+					pixs[i][j] = c.getRGB();
+				}
+			}
+		}
+		
+		
+		
+
+		
+		
+		
+		
+		
+		int xpoints01[] = new int[]{op01[0],op02[0],op03[0],op04[0]};
+		int ypoints01[] = new int[]{op01[1],op02[1],op03[1],op04[1]};
+		g2.setColor(Color.GREEN);
+		
+		g2.draw(new Polygon(xpoints01, ypoints01, 4));
+	
+//		g2.drawLine(op1[0], op1[1], op2[0], op2[1]);
+//		g2.drawLine(op2[0], op2[1], op3[0], op3[1]);
+//		g2.drawLine(op3[0], op3[1], op4[0], op4[1]);
+//		g2.drawLine(op4[0], op4[1], op1[0], op1[1]);
+		
+		int xpoints02[] = new int[]{op05[0],op06[0],op07[0],op08[0]};
+		int ypoints02[] = new int[]{op05[1],op06[1],op07[1],op08[1]};
+		g2.setColor(Color.RED);
+		
+		g2.draw(new Polygon(xpoints02, ypoints02, 4));
+		
+//		g2.drawLine(op5[0], op5[1], op6[0], op6[1]);
+//		g2.drawLine(op6[0], op6[1], op7[0], op7[1]);
+//		g2.drawLine(op7[0], op7[1], op8[0], op8[1]);
+//		g2.drawLine(op8[0], op8[1], op5[0], op5[1]);
+		
+		int xpoints03[] = new int[]{op05[0],op01[0],op02[0],op06[0]};
+		int ypoints03[] = new int[]{op05[1],op01[1],op02[1],op06[1]};
+		g2.setColor(Color.BLUE);
+		
+		g2.draw(new Polygon(xpoints03, ypoints03, 4));
+		
+//		int xpoints3[] = new int[]{op5[0],op1[0],op2[0],op6[0]};
+//		int ypoints3[] = new int[]{op5[1],op1[1],op2[1],op6[1]};
+		g2.setColor(Color.BLUE);
+		
+		g2.fill(new Polygon(xpoints03, ypoints03, 4));
+		
+		g2.drawLine(op1[0], op1[1], op5[0], op5[1]);
+		g2.drawLine(op6[0], op6[1], op2[0], op2[1]);
+		g2.drawLine(op7[0], op7[1], op3[0], op3[1]);
+		g2.drawLine(op8[0], op8[1], op4[0], op4[1]);
+		
+		setArray(pixs);
+		
+		g.drawImage(image, 0, 0, null);
+	}
+	
+	
+
+	
+
+	public void projectPoint1( int[] input, int[] output )
+	{
+		 double x = screenPosition2[0] + input[0] * CT - input[1] * ST;
+		 double y = screenPosition2[1] + input[0] * ST * SP + input[1] * CT * SP
+		   + input[2] * CP;
+		 double temp = viewAngle[2] / (screenPosition2[2] + input[0] * ST * CP
+		   + input[1] * CT * CP - input[2] * SP );
+	
+		 output[0] = (int)(xScreenCenter + modelScale * temp * x);
+		 output[1] = (int)(yScreenCenter - modelScale * temp * y);
+		 output[2] = 0;
+		 
+	}
+	
+	public void projectPoint2( int[] input, int[] output )
+	{
+		 double x = screenPosition2[0] + input[0] * CT - input[1] * ST;
+		 double y = screenPosition2[1] + input[0] * ST * SP + input[1] * CT * SP
+		   + input[2] * CP;
+		 double temp = viewAngle[2] / (screenPosition2[2] + input[0] * ST * CP
+		   + input[1] * CT * CP - input[2] * SP );
+	
+		 output[0] = (int)(xScreenCenter + modelScale * temp * x);
+		 output[1] = (int)(yScreenCenter - modelScale * temp * y);
+		 output[2] = 1;
+		 output[3] = input[2];
+		 
+	}
+	
+	public void getArray(int pixels[][]){
+		
+		for(int i=0; i < image.getWidth(); i++){
+			for (int j=0; j < image.getHeight(); j++){
+				pixels[i][j] = image.getRGB(i, j);
+			}
+		}
+		
+	}
+	
+	public void setArray(int pixels[][]){
+		
+		for(int i=0; i < image.getWidth(); i++){
+			for (int j=0; j < image.getHeight(); j++){
+				 image.setRGB(i, j, pixels[i][j]);
+			}
+		}
+		
+	}
+
+	@Override
+	public void keyPressed(KeyEvent event) {
+		
+		if (event.getKeyCode() == KeyEvent.VK_UP) {
+			viewAngle[1] ++;
+			repaint();
+			}
+		if (event.getKeyCode() == KeyEvent.VK_DOWN) {
+			viewAngle[1] --;
+			repaint();
+			}
+		if (event.getKeyCode() == KeyEvent.VK_RIGHT) {
+			viewAngle[0] ++;
+			repaint();
+			}
+		if (event.getKeyCode() == KeyEvent.VK_LEFT) {
+			viewAngle[0] --;
+			repaint();
+			}
+		
+	}
+
+	@Override
+	public void keyReleased(KeyEvent e) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void keyTyped(KeyEvent e) {
+		// TODO Auto-generated method stub
+		
+	}
+	
+}
